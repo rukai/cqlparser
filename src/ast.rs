@@ -1,7 +1,11 @@
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     Select(Select),
+    Insert(Insert),
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Insert {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Select {

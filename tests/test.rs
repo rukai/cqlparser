@@ -8,6 +8,11 @@ fn assert_parses(input: &[&str], ast: Vec<Statement>) {
 }
 
 #[test]
+fn test_insert() {
+    assert_parses(&["insert"], vec![Statement::Insert(Insert {})]);
+}
+
+#[test]
 fn test_select_one_field() {
     assert_parses(
         &[
