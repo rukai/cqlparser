@@ -1,4 +1,5 @@
-use crate::ast::*;
+use std::str;
+use std::str::FromStr;
 
 use nom::branch::alt;
 use nom::bytes::complete::{tag, tag_no_case, take_while1};
@@ -6,26 +7,28 @@ use nom::character::complete::{digit1, multispace0, multispace1};
 use nom::character::is_alphanumeric;
 use nom::combinator::{map, opt};
 use nom::multi::many0;
-use nom::sequence::{delimited, preceded, terminated, tuple};
+use nom::sequence::{delimited, pair, preceded, terminated, tuple};
 use nom::IResult;
-use std::str;
-use std::str::FromStr;
+
+use crate::ast::*;
 
 pub fn select(i: &[u8]) -> IResult<&[u8], Select> {
-    let (remaining_input, (_, _, json, select, from, order_by, limit, allow_filtering)) = tuple((
-        tag_no_case("select"),
-        multispace1,
-        json,
-        select_fields,
-        select_from,
-        opt(order_by),
-        limit,
-        allow_filtering,
-    ))(i)?;
+    let (remaining_input, (_, _, distinct, json, select, from, order_by, limit, allow_filtering)) =
+        tuple((
+            tag_no_case("select"),
+            multispace1,
+            distinct,
+            json,
+            fields,
+            from,
+            opt(order_by),
+            limit,
+            allow_filtering,
+        ))(i)?;
     Ok((
         remaining_input,
         Select {
-            distinct: false,
+            distinct,
             json,
             select,
             from,
@@ -39,6 +42,10 @@ pub fn select(i: &[u8]) -> IResult<&[u8], Select> {
 
 pub fn json(i: &[u8]) -> IResult<&[u8], bool> {
     opt(terminated(tag_no_case("json"), multispace1))(i).map(|(r, v)| (r, v.is_some()))
+}
+
+pub fn distinct(i: &[u8]) -> IResult<&[u8], bool> {
+    opt(terminated(tag_no_case("distinct"), multispace1))(i).map(|(r, v)| (r, v.is_some()))
 }
 
 pub fn order_by(i: &[u8]) -> IResult<&[u8], OrderBy> {
@@ -81,23 +88,33 @@ pub fn allow_filtering(i: &[u8]) -> IResult<&[u8], bool> {
     opt(preceded(multispace1, tag_no_case("allow filtering")))(i).map(|(r, v)| (r, v.is_some()))
 }
 
-pub fn select_fields(i: &[u8]) -> IResult<&[u8], Vec<SelectElement>> {
-    many0(terminated(
-        alt((
-            map(tag("*"), |_| SelectElement {
-                expr: Expr::Wildcard,
-                as_alias: None,
-            }),
-            map(identifier, |name| SelectElement {
-                expr: Expr::Name(String::from_utf8(name.to_vec()).unwrap()),
-                as_alias: None,
-            }),
+pub fn fields(i: &[u8]) -> IResult<&[u8], Vec<SelectElement>> {
+    many0(terminated(field, opt(ws_sep_comma)))(i)
+}
+
+pub fn field(i: &[u8]) -> IResult<&[u8], SelectElement> {
+    let (remaining, (expr, as_alias)) = pair(
+        expr,
+        opt(preceded(
+            tuple((multispace1, tag_no_case("AS"), multispace1)),
+            identifier,
         )),
-        opt(ws_sep_comma),
+    )(i)?;
+
+    let as_alias = as_alias.map(|x| String::from_utf8(x.to_vec()).unwrap());
+    Ok((remaining, SelectElement { expr, as_alias }))
+}
+
+pub fn expr(i: &[u8]) -> IResult<&[u8], Expr> {
+    alt((
+        map(tag("*"), |_| Expr::Wildcard),
+        map(identifier, |name| {
+            Expr::Name(String::from_utf8(name.to_vec()).unwrap())
+        }),
     ))(i)
 }
 
-pub fn select_from(i: &[u8]) -> IResult<&[u8], Vec<String>> {
+pub fn from(i: &[u8]) -> IResult<&[u8], Vec<String>> {
     preceded(
         tuple((multispace1, tag_no_case("from"), multispace1)),
         map(identifier, |name| {

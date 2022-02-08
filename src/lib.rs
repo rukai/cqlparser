@@ -1,12 +1,11 @@
 pub mod ast;
 pub(crate) mod parser;
 
-use nom::branch::alt;
-
-use nom::combinator::map;
-
-use nom::IResult;
 use std::str;
+
+use nom::branch::alt;
+use nom::combinator::map;
+use nom::IResult;
 
 use crate::ast::*;
 use crate::parser::insert::insert;

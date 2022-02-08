@@ -36,6 +36,85 @@ fn test_select_one_field() {
 }
 
 #[test]
+fn test_select_one_field_as() {
+    assert_parses(
+        &[
+            "select field as alias from table",
+            "SELECT    field    AS    alias   FROM    table",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: Some("alias".into()),
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_many_fields_as() {
+    assert_parses(
+        &[
+            "select field1 as foo, field2, field3 as bar from table",
+            "select field1    as    foo    ,   field2    ,   field3   as   bar from table",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![
+                SelectElement {
+                    expr: Expr::Name("field1".to_string()),
+                    as_alias: Some("foo".into()),
+                },
+                SelectElement {
+                    expr: Expr::Name("field2".to_string()),
+                    as_alias: None,
+                },
+                SelectElement {
+                    expr: Expr::Name("field3".to_string()),
+                    as_alias: Some("bar".into()),
+                },
+            ],
+            from: vec!["table".to_string()],
+            where_: vec![],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_distinct() {
+    assert_parses(
+        &[
+            "SELECT distinct field FROM table",
+            "SELECT    DISTINCT    field FROM table",
+        ],
+        vec![Statement::Select(Select {
+            distinct: true,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
 fn test_select_json() {
     assert_parses(
         &[
@@ -237,9 +316,9 @@ fn test_select_all() {
 #[test]
 fn test_select_christmas_tree() {
     assert_parses(
-        &["SELECT json field1, field2 FROM table order by order_column DESC limit 9999 allow filtering"],
+        &["SELECT distinct json field1, field2 as foo FROM table order by order_column DESC limit 9999 allow filtering"],
         vec![Statement::Select(Select {
-            distinct: false,
+            distinct: true,
             json: true,
             select: vec![
                 SelectElement {
@@ -248,7 +327,7 @@ fn test_select_christmas_tree() {
                 },
                 SelectElement {
                     expr: Expr::Name("field2".to_string()),
-                    as_alias: None,
+                    as_alias: Some("foo".into()),
                 },
             ],
             from: vec!["table".to_string()],
