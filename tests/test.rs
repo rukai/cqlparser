@@ -166,6 +166,175 @@ fn test_select_order_by_asc() {
 }
 
 #[test]
+fn test_select_where_field_greater_than_int() {
+    assert_parses(
+        &[
+            "select field from table where foo > 1",
+            "select field from table where     foo     >     1",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![RelationElement::Comparison(RelationComparison {
+                lhs: Expr::Name("foo".to_string()),
+                operator: ComparisonOperator::GreaterThan,
+                rhs: Expr::Constant(Constant::Decimal(1)),
+            })],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_where_field_and() {
+    assert_parses(
+        &[
+            "select field from table where foo < 1 and bar <= 1111",
+            //"select field from table where     foo    <   1    AND    bar   <=    1111",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![
+                RelationElement::Comparison(RelationComparison {
+                    lhs: Expr::Name("foo".to_string()),
+                    operator: ComparisonOperator::LessThan,
+                    rhs: Expr::Constant(Constant::Decimal(1)),
+                }),
+                RelationElement::Comparison(RelationComparison {
+                    lhs: Expr::Name("bar".to_string()),
+                    operator: ComparisonOperator::LessThanOrEqualTo,
+                    rhs: Expr::Constant(Constant::Decimal(1111)),
+                }),
+            ],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_where_field_greater_than_or_equal_negative_int() {
+    assert_parses(
+        &[
+            "select field from table where foo >= -13",
+            "select field from table where     foo     >=     -13",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![RelationElement::Comparison(RelationComparison {
+                lhs: Expr::Name("foo".to_string()),
+                operator: ComparisonOperator::GreaterThanOrEqualTo,
+                rhs: Expr::Constant(Constant::Decimal(-13)),
+            })],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_where_field_equals_bool() {
+    assert_parses(
+        &[
+            "select field from table where foo = true",
+            "select field from table where     foo     =     true",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![RelationElement::Comparison(RelationComparison {
+                lhs: Expr::Name("foo".to_string()),
+                operator: ComparisonOperator::Equals,
+                rhs: Expr::Constant(Constant::Bool(true)),
+            })],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_where_field_equals_string() {
+    assert_parses(
+        &[
+            "select field from table where foo = 'bar'",
+            "select field from table where     foo     =     'bar'",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![RelationElement::Comparison(RelationComparison {
+                lhs: Expr::Name("foo".to_string()),
+                operator: ComparisonOperator::Equals,
+                rhs: Expr::Constant(Constant::String("bar".into())),
+            })],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
+fn test_select_where_field_equals_string_escape_quote() {
+    assert_parses(
+        &[
+            "select field from table where foo = 'lucas'' cool string '''''",
+            "select field from table where     foo     =     'lucas'' cool string '''''",
+        ],
+        vec![Statement::Select(Select {
+            distinct: false,
+            json: false,
+            select: vec![SelectElement {
+                expr: Expr::Name("field".to_string()),
+                as_alias: None,
+            }],
+            from: vec!["table".to_string()],
+            where_: vec![RelationElement::Comparison(RelationComparison {
+                lhs: Expr::Name("foo".to_string()),
+                operator: ComparisonOperator::Equals,
+                rhs: Expr::Constant(Constant::String("lucas' cool string ''".into())),
+            })],
+            order_by: None,
+            limit: None,
+            allow_filtering: false,
+        })],
+    );
+}
+
+#[test]
 fn test_select_order_by_desc() {
     assert_parses(
         &[
@@ -238,7 +407,7 @@ fn test_select_limit_0() {
 }
 
 #[test]
-fn test_allow_filtering() {
+fn test_select_allow_filtering() {
     assert_parses(
         &[
             "SELECT field FROM table allow filtering",

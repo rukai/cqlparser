@@ -92,9 +92,9 @@ pub enum Expr {
 pub enum Constant {
     UUID,
     String(String),
-    Decimal(i32),
-    Float(f32),
-    Hex(i32),
+    Decimal(i64),
+    Float(f64), // TODO: we should store raw instead of ieee
+    Hex(i64),
     Bool(bool),
     CodeBlock(String),
     Null,
