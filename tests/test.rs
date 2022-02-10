@@ -485,7 +485,7 @@ fn test_select_all() {
 #[test]
 fn test_select_christmas_tree() {
     assert_parses(
-        &["SELECT distinct json field1, field2 as foo FROM table order by order_column DESC limit 9999 allow filtering"],
+        &["SELECT distinct json field1, field2 as foo FROM table WHERE foo = 1 order by order_column DESC limit 9999 allow filtering"],
         vec![Statement::Select(Select {
             distinct: true,
             json: true,
@@ -500,7 +500,11 @@ fn test_select_christmas_tree() {
                 },
             ],
             from: vec!["table".to_string()],
-            where_: vec![],
+            where_: vec![RelationElement::Comparison(RelationComparison {
+                lhs: Expr::Name("foo".to_string()),
+                operator: ComparisonOperator::Equals,
+                rhs: Expr::Constant(Constant::Decimal(1)),
+            })],
             order_by: Some(OrderBy {
                 name: "order_column".to_string(),
                 ordering: Ordering::Desc,
