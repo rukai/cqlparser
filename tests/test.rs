@@ -1,9 +1,11 @@
+use bytes::Bytes;
+
 use cqlparser::ast::*;
 use cqlparser::parse;
 
 fn assert_parses(input: &[&str], ast: Vec<Statement>) {
     for input in input {
-        assert_eq!(parse(input), ast);
+        assert_eq!(parse(Bytes::from(input.as_bytes().to_vec())), ast);
     }
 }
 

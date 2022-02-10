@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Statement {
     Select(Select),
@@ -12,7 +14,7 @@ pub struct Select {
     pub distinct: bool,
     pub json: bool,
     pub select: Vec<SelectElement>,
-    pub from: Vec<String>,
+    pub from: Vec<Bytes>,
     /// Every element is AND'd together
     pub where_: Vec<RelationElement>,
     pub order_by: Option<OrderBy>,
@@ -23,7 +25,7 @@ pub struct Select {
 #[derive(Debug, Clone, PartialEq)]
 pub struct SelectElement {
     pub expr: Expr,
-    pub as_alias: Option<String>,
+    pub as_alias: Option<Bytes>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -82,7 +84,7 @@ pub enum Ordering {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Name(String),
+    Name(Bytes),
     Constant(Constant),
     FunctionCall(FunctionCall),
     Wildcard,

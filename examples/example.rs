@@ -1,5 +1,6 @@
+use bytes::Bytes;
 use cqlparser::parse;
 
 fn main() {
-    parse("select field from table");
+    parse(Bytes::from_static("select field from table".as_bytes()));
 }
